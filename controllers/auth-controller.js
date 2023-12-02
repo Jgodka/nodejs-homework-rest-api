@@ -1,5 +1,10 @@
+import fs from "fs/promises";
+import path from "path";
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import gravatar from "gravatar";
+import Jimp from "jimp";
 
 import User from "../models/User.js";
 
@@ -9,6 +14,8 @@ import { HttpError } from "../helpers/index.js";
 
 const { JWT_SECRET } = process.env;
 
+const postersPath = path.resolve("public", "avatars");
+
 const register = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
@@ -17,15 +24,18 @@ const register = async (req, res) => {
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
+  const avatarURL = gravatar.url(email);
 
   const newUser = await User.create({
     ...req.body,
     password: hashPassword,
+    avatarURL,
   });
   res.status(201).json({
     user: {
       email: newUser.email,
       subscription: "starter",
+      avatarURL,
     },
   });
 };
@@ -75,9 +85,32 @@ const logout = async (req, res) => {
   });
 };
 
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  const { path: tempUpload, originalname } = req.file;
+  const fileName = `${_id}_${originalname}`;
+
+  try {
+    const avatar = await Jimp.read(tempUpload);
+    await avatar.resize(250, 250).quality(60).write(tempUpload);
+  } catch (err) {
+    throw err;
+  }
+
+  const publicUpload = path.join(postersPath, fileName);
+  await fs.rename(tempUpload, publicUpload);
+  const avatarUrl = path.join("avatars", fileName);
+  await User.findByIdAndUpdate(_id, { avatarUrl });
+
+  res.json({
+    avatarUrl,
+  });
+};
+
 export default {
   register: ctrlWrapper(register),
   login: ctrlWrapper(login),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
+  updateAvatar: ctrlWrapper(updateAvatar),
 };
