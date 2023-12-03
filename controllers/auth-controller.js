@@ -35,7 +35,6 @@ const register = async (req, res) => {
     user: {
       email: newUser.email,
       subscription: "starter",
-      avatarURL,
     },
   });
 };
@@ -86,6 +85,10 @@ const logout = async (req, res) => {
 };
 
 const updateAvatar = async (req, res) => {
+  if (!req.file) {
+    throw HttpError(400, "You need to add an avatar.");
+  }
+
   const { _id } = req.user;
   const { path: tempUpload, originalname } = req.file;
   const fileName = `${_id}_${originalname}`;
