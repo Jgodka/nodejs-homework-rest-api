@@ -12,12 +12,14 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Set password for user"],
     },
+
     email: {
       type: String,
       match: emailRegexp,
       required: [true, "Email is required"],
       unique: true,
     },
+
     subscription: {
       type: String,
       enum: ["starter", "pro", "business"],
@@ -28,6 +30,16 @@ const userSchema = new Schema(
 
     avatarUrl: {
       type: String,
+    },
+
+    verify: {
+      type: Boolean,
+      default: false,
+    },
+
+    verificationToken: {
+      type: String,
+      required: [true, "Verify token is required"],
     },
   },
   { versionKey: false, timestamps: true }
@@ -47,6 +59,13 @@ export const registerSchema = Joi.object({
 export const loginSchema = Joi.object({
   password: Joi.string().min(6).required(),
   email: Joi.string().pattern(emailRegexp).required(),
+});
+
+export const userEmailSchema = Joi.object({
+  email: Joi.string()
+    .pattern(emailRegexp)
+    .required()
+    .messages({ "any.required": "missing required field email" }),
 });
 
 const User = model("user", userSchema);
