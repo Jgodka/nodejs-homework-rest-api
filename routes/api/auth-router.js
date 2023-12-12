@@ -3,7 +3,12 @@ import authController from "../../controllers/auth-controller.js";
 
 import { authenticate, isEmptyBody, upload } from "../../middlewares/index.js";
 import { validateBody } from "../../decorators/index.js";
-import { registerSchema, loginSchema } from "../../models/User.js";
+import {
+  registerSchema,
+  loginSchema,
+  userEmailSchema,
+} from "../../models/User.js";
+
 const authRouter = express.Router();
 
 authRouter.post(
@@ -11,6 +16,15 @@ authRouter.post(
   isEmptyBody,
   validateBody(registerSchema),
   authController.register
+);
+
+authRouter.get("/verify/:verificationToken", authController.verify);
+
+authRouter.post(
+  "/verify",
+  isEmptyBody,
+  validateBody(userEmailSchema),
+  authController.resendVerify
 );
 
 authRouter.post(
